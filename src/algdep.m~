@@ -1,0 +1,46 @@
+function IsReciprocal(P)
+    d := Degree(P);
+    for i := 0 to d do 		/* no need to optimize and take Floor(d/2) */
+	if not Coefficient(P,i) eq Coefficient(P,d-i) then
+	    return false;
+	end if;
+
+    end for;
+    return true;
+end function;
+
+function ThoroughAlgdep(a,deg : nn := 100)
+    /* Important! Input CT, not Exp(CT) */
+
+    /* Håvard 21/01/22: added check for reciprocality */
+    Kp   := Parent(a);
+    p    := Prime(Kp);
+    m    := Precision(Parent(a));
+   
+    ZZ := Integers();
+    QQ := Rationals();
+   
+    PolZ<x> := PolynomialRing(ZZ);
+    PolQ<x> := PolynomialRing(QQ);
+    
+    for i := 1 to nn do
+    	for j := 1 to nn do
+    	    if IsDivisibleBy(j,p) eq false then
+		P1 := algdep(Exp(a*i/j),deg);
+		PQ := PolQ!P1;
+		LT := Coefficient(P1,deg);
+		if LT/p^Valuation(LT,p) eq 1 then
+		    for k := -nn to nn do 
+			if IsReciprocal(Evaluate(PQ,p^k*x)) then
+			    print " found p-reciprocal polynomial!";
+			    print "i,j = ", i,j;    
+			    return P1;
+			end if;
+		    end for;
+		end if;
+	    end if;
+	end for;
+    end for;
+    print "Not recognised!";
+    return 1*x^0;
+end function;
