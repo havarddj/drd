@@ -129,33 +129,71 @@ end function;
 // This section computes the ordinary projection of an overconvergent form G, by iterating Up. 
 
 // Given a form G in a space with basis B, recognise G as a linear combination of the elements in B.
-function basis_coordinates(G,B : prt := false)
+/* function basis_coordinates(G,B : prt := false) */
 
-	m := Precision(Parent(G));
-	C := Matrix([[Coefficient(B[i],j) : j in [1..m-1]] : i in [1..#B]] cat [[Coefficient(G,j) : j in [1..m-1]]]);
-	K := Basis(Kernel(C));
-	if #K eq 0 then
-		print "Not a combination of the basis elements!";
-		constant := 0;
-	else
-		comb := K[1];
-		constant := -(&+ [Coefficient(B[i],0)*comb[i] : i in [1..#B]])/comb[#B+1];
-		if prt eq true then
-			print "";
-			print "Kernel is: ";
-			print K;
-			print "";
-			for i := 1 to #B do
-				print "Valuation coordinate i: ", Valuation(comb[i]);
-			end for;
-			print "Constant term is: ", constant;
-		end if;
-	end if;
+/* 	m := Precision(Parent(G)); */
+/* 	C := Matrix([[Coefficient(B[i],j) : j in [1..m-1]] : i in [1..#B]] cat [[Coefficient(G,j) : j in [1..m-1]]]); */
+/* 	K := Basis(Kernel(C)); */
+/* 	if #K eq 0 then */
+/* 		print "Not a combination of the basis elements!"; */
+/* 		constant := 0; */
+/* 	else */
+/* 		comb := K[1]; */
+/* 		constant := -(&+ [Coefficient(B[i],0)*comb[i] : i in [1..#B]])/comb[#B+1]; */
+/* 		if prt eq true then */
+/* 			print ""; */
+/* 			print "Kernel is: "; */
+/* 			print K; */
+/* 			print ""; */
+/* 			for i := 1 to #B do */
+/* 				print "Valuation coordinate i: ", Valuation(comb[i]); */
+/* 			end for; */
+/* 			print "Constant term is: ", constant; */
+/* 		end if; */
+/* 	end if; */
 	
-	return constant, comb;
+/* 	return constant, comb; */
+
+/* end function; */
+
+
+function basis_coordinates(G,B : prt := true)
+
+    Rp := Parent(Coefficient(G,1));
+    m := Precision(Parent(G));
+    C := Matrix([[Coefficient(B[i],j) : j in [1..m-1]] : i in [1..#B]] cat [[Coefficient(G,j) : j in [1..m-1]]]);
+    K := Basis(Kernel(C));
+    if #K eq 0 then
+	print "Not a combination of the basis elements!";
+	comb := 0;
+	constant := 0;
+    else
+	/* Pick the right combination, based on the requirement that the final coefficient of the combination, corresponding to G, should have valuation 0 */
+	/* j := 1;			 */
+	/* while Valuation(K[j][#B+1]) gt 0 do */
+	/*     j := j+ 1; */
+	/* end while; */
+	comb := K[1];
+	/*  */
+	if prt eq true then
+	    print "";
+	    print "Kernel is: ";
+	    print K; /* K[1],K[2]/\* ,K[3]; *\/ */
+		
+	    print "";
+	    for i := 1 to #B+1 do
+		print "Valuation coordinate i: ", i, Valuation(comb[i]);
+	    end for;
+	    print "";
+	    print "Coeff of G:", comb[#B+1];
+	end if;
+	constant := -(&+ [Coefficient(B[i],0)*comb[i] : i in [1..#B]])/Rp!comb[#B+1];
+	print "Constant term is: ", constant;
+    end if;
+	
+    return constant, comb;
 
 end function;
-
 
 
 // Test whether a given form is overconvergent of weight 2 and tame level 1.
@@ -168,7 +206,7 @@ function IsOverconvergent(G : prt := false)
 	
 	constant, comb := basis_coordinates(G,B : prt := prt);
 	
-	return comb;
+	return constant;
 	
 end function;
 
@@ -221,11 +259,11 @@ function OrdinaryProjection(G : prt := false)
 
 		// Projection matrix
 		t0 := Cputime();
-		A2   := A^2;
-		Apow := A2;
-		for i := 1 to m do
-			Apow := Apow*A2;
-		end for;
+		Apow := A^(2*m);
+		/* for i := 1 to m do */
+		/* 	Apow := Apow*A2; */
+		/* end for; */
+
 		print "Computed projection matrix:    ", Cputime() - t0;
 
 		// Projection of G.		

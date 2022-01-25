@@ -1,7 +1,11 @@
+// Common structures:
+ZZ := Integers();
+QQ := Rationals(); 
+RR := RealField(500);
+
 function algdepZpm(a,deg)
 
 	N  := Modulus(Parent(a));
-	ZZ := Integers();
 	RR := RealField(500);
 	M  := ZeroMatrix(RR,deg+2,deg+2);
 
@@ -28,10 +32,7 @@ end function;
 
 // Algebraic recognition for element in Qp.
 function algdepQp(a,deg)
-
-    ZZ := Integers();
-    QQ := Rationals();
-    RR := RealField(500);
+    
     PolZ<x>:=PolynomialRing(ZZ);
    
     p := Prime(Parent(a));
@@ -60,9 +61,6 @@ end function;
 // Algebraic recognition for element in Qp^2.
 function algdepQp2(a,deg)
 
-    ZZ := Integers();
-    QQ := Rationals();
-    RR := RealField(500);
     PolZ<x>:=PolynomialRing(ZZ);
    
     p := Prime(Parent(a));
@@ -106,6 +104,81 @@ function algdep(a,deg)
 
 end function;
 
+
+function recAlgdepQp(a,deg)
+    PolZ<x>:=PolynomialRing(ZZ);
+   
+    p := Prime(Parent(a));
+    m := Precision(Parent(a));
+    N := p^m;
+    assert deg mod 2 eq 0;
+    d := deg/2;
+    M:=ZeroMatrix(RR,d+2,d+2);
+    for j := 1 to d+1 do 
+        M[j,j] := 1;
+        M[j,deg+2] := QQ!(a^(j-1) + a^(deg - j+1));
+    end for;
+    M[deg+2][deg+2] := N;
+    Y,T:=LLL(M);
+
+    P1 := Floor(Y[2][deg+2]/2 - Y[2][1]/2)*(1+x^deg);
+    for j := 2 to deg+1 do
+        P1 := P1 - Floor(Y[2][j])*(x^(j-1)+x^(deg-j+1));
+    end for;
+    /* Fac1 := Factorisation(P1); */
+    /* P1   := Fac1[#Fac1][1]; */
+    
+    return P1;    
+end function;
+
+
+function recAlgdepQp2(a,deg)
+
+    RR := RealField(500);    
+    assert deg mod 2 eq 0;
+    PolZ<x>:=PolynomialRing(ZZ);
+
+    p := Prime(Parent(a));
+    m := Precision(Parent(a));
+    N := p^Floor(5*m/7);
+
+    d := ZZ!(deg/2);
+    
+    M:=ZeroMatrix(RR,d+3,d+3);
+    for j := 1 to d+1 do 
+        M[j,j] := 1;
+	ci := a^(j-1) + a^(deg-j+1);
+        M[j,d+2] := QQ!(Coefficient(ci,1));
+        M[j,d+3] := QQ!(Coefficient(ci,2));
+    end for;
+    M[d+2][d+2] := N;
+    M[d+3][d+3] := N;
+    Y,T:=LLL(M);
+
+    P1 := Floor(Y[2][d+2]/2 - Y[2][1]/2)*(1+x^deg);
+    for j := 2 to d+1 do
+        P1 := P1 - Floor(Y[2][j]/2)*(x^(j-1) + x^(deg-j+1));
+    end for;
+    /* Fac1 := Factorisation(P1); */
+    /* P1   := Fac1[#Fac1][1]; */
+    
+    return P1;
+end function;
+
+function recAlgdep(a,deg)	
+    if Type(a) eq RngIntResElt then
+	return algdepZpm(a,deg);
+    else
+	if Degree(Parent(a)) eq 1 then
+	    return recAlgdepQp(a,deg);
+	else
+	    return recAlgdepQp2(a,deg);
+	end if;
+    end if;
+
+end function;
+
+
 function IsReciprocal(P)
     d := Degree(P);
     for i := 0 to d do 		/* no need to optimize and take Floor(d/2) */
@@ -121,6 +194,8 @@ function ThoroughAlgdep(a,deg : nn := 100)
     /* Important! Input CT, not Exp(CT) */
 
     /* Håvard 21/01/22: added check for reciprocality */
+    /* 25/01/22: wrote recAlgdep functions which apply LLL to find reciprocal pols*/
+    
     Kp   := Parent(a);
     p    := Prime(Kp);
     m    := Precision(Parent(a));
@@ -134,21 +209,20 @@ function ThoroughAlgdep(a,deg : nn := 100)
     for i := 1 to nn do
     	for j := 1 to nn do
     	    if IsDivisibleBy(j,p) eq false then
-		P1 := algdep(Exp(a*i/j),deg);
-		PQ := PolQ!P1;
-		LT := Coefficient(P1,deg);
-		if LT/p^Valuation(LT,p) eq 1 then
-		    for k := -nn to nn do 
-			if IsReciprocal(Evaluate(PQ,p^k*x)) then
-			    print " found p-reciprocal polynomial!";
-			    print "i,j = ", i,j;    
-			    return P1;
-			end if;
-		    end for;
-		end if;
+		for m := 0 to 20 do
+		    P1 := recAlgdep(Exp(a*i/j)*p^m,deg);
+		    PQ := Evaluate(PolQ!P1,p^(-m)*x);
+		    LT := Coefficient(P1,deg);
+		    if LT/p^Valuation(LT,p) eq 1 then
+			print " found p-reciprocal polynomial!";
+			print "i,j = ", i,j;    
+			return P1;
+		    end if;
+		end for;
 	    end if;
 	end for;
     end for;
     print "Not recognised!";
     return 1*x^0;
 end function;
+

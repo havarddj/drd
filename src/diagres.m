@@ -1,14 +1,7 @@
-// Common structures:
-ZZ := Integers();
-QQ := Rationals(); 
-
 IMat := Matrix(2,2,[[1, 0],[0,1]]);  // Identity
 SMat := Matrix(2,2,[[0,-1],[1,0]]);  // Order 4
 TMat := Matrix(2,2,[[1, 1],[0,1]]);  // Translation
 STMat:= Matrix(2,2,[[0,-1],[1,1]]);  // Order 6
-
-
-
 
 /* Helper functions */
 /*  */
@@ -81,13 +74,6 @@ function EisWeight(p)
 
 end function;
 
-
-
-
-/* Quadratic forms functions */
-/*  */
-/*  */
-/*  */
 
 // Check whether pair1 = (w1, delta1) and pair2 = (w2, delta2) are equivalent in RM(n,C)
 function EquivalenceRM(pair1,pair2)
@@ -168,9 +154,9 @@ function HeckeMatrices(n : N := 1)
 	Sd := [d : d in Divisors(n) | GreatestCommonDivisor(ZZ!(n/d),N) eq 1];
 	Mn := [];
 	for d in Sd do
-		for j := 0 to d-1 do
-			Append(~Mn,Matrix([[d,j],[0,ZZ!(n/d)]]));
-		end for;
+	    for j := 0 to d-1 do
+		Append(~Mn,Matrix([[d,j],[0,ZZ!(n/d)]]));
+	    end for;
 	end for;
 	
 	return Mn;
@@ -204,8 +190,6 @@ function RM_Points(n,d,Forms_d : D := ZZ!(Discriminant(Forms_d[1][1])/d^2))
  	    B  := 2*q*r*a + ZZ!(n/d)*b;
  	    C  :=   r^2*a + r*t*b + t^2*c;
  	    MF := QuadraticForms(D*n^2)!<A,B,C>;
-	    /* print delta_d, Mat; */
-	    /* print ""; */
  	    delta_n := delta_d*Mat;
  	    RM_n := [* MF,delta_n *];
  	    if [EquivalenceRM(RM_n,G) : G in Forms_n] eq [false : G in Forms_n] then
@@ -294,7 +278,8 @@ function diagonal_restriction_derivative(F,p,m,Fs,Forms : pprec := m)
 	Diag_F := Diag_F + 2*coeff_n*q^n;
     end for;
 
-    ct := IsOverconvergent(Diag_F);
+    ct := IsOverconvergent(Diag_F : prt := true);
+    print ct;
     return R!ct + Diag_F;
 
 end function;	  
