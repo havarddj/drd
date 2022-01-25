@@ -191,7 +191,7 @@ function IsReciprocal(P)
 end function;
 
 function ThoroughAlgdep(a,deg : nn := 100)
-    /* Important! Input CT, not Exp(CT) */
+    /* Important! Input Exp(CT), not CT! */
 
     /* Håvard 21/01/22: added check for reciprocality */
     /* 25/01/22: wrote recAlgdep functions which apply LLL to find reciprocal pols*/
@@ -199,26 +199,23 @@ function ThoroughAlgdep(a,deg : nn := 100)
     Kp   := Parent(a);
     p    := Prime(Kp);
     m    := Precision(Parent(a));
-   
+    RKp<z> := PolynomialRing(Kp);
+    
     ZZ := Integers();
     QQ := Rationals();
    
     PolZ<x> := PolynomialRing(ZZ);
     PolQ<x> := PolynomialRing(QQ);
-    
-    for i := 1 to nn do
-    	for j := 1 to nn do
-    	    if IsDivisibleBy(j,p) eq false then
-		for m := 0 to 20 do
-		    P1 := recAlgdep(Exp(a*i/j)*p^m,deg);
-		    PQ := Evaluate(PolQ!P1,p^(-m)*x);
-		    LT := Coefficient(P1,deg);
-		    if LT/p^Valuation(LT,p) eq 1 then
-			print " found p-reciprocal polynomial!";
-			print "i,j = ", i,j;    
-			return P1;
-		    end if;
-		end for;
+    zeta := Roots(RKp!CyclotomicPolynomial(p^2-1))[1][1];
+    for m := 0 to 10 do
+	for k in [0..p-1] do
+	    P1 := recAlgdep(a*zeta^k*p^m,deg);
+	    PQ := Evaluate(PolQ!P1,p^(-m)*x);
+	    LT := Coefficient(P1,deg);
+	    if LT/p^Valuation(LT,p) eq 1 then
+		print " found p-reciprocal polynomial!";
+		print "(p^2-1)-th root of unity: zeta^", k; 
+		return PQ;
 	    end if;
 	end for;
     end for;
@@ -226,3 +223,37 @@ function ThoroughAlgdep(a,deg : nn := 100)
     return 1*x^0;
 end function;
 
+
+function ThoroughAlgdep2(a,deg)
+    Kp   := Parent(a);
+    p    := Prime(Kp);
+    m    := Precision(Parent(a));
+    RKp<z> := PolynomialRing(Kp);
+    zeta := Roots(RKp!CyclotomicPolynomial(p^2-1))[1][1];
+    
+    ZZ := Integers();
+    QQ := Rationals();
+   
+    PolZ<x> := PolynomialRing(ZZ);
+    PolQ<x> := PolynomialRing(QQ);
+    
+    P := PolZ!x^deg;
+    for k := 0 to ZZ!((p^2-1)/2) do
+	P1 := algdep(a*zeta^k,deg);
+	LT := Coefficient(P1,deg);
+	if LT/p^Valuation(LT,p) eq 1 then
+	    for m := 0 to 10 do
+		PQ := Evaluate(PolQ!P1,p^m*x);
+		if IsReciprocal(PQ) and Degree(PQ) le Degree(P) then
+		    P := Evaluate(PQ,p^(-m)*x);
+		end if;
+	    end for;
+	end if;
+    end for;
+    if not P eq x^deg then 
+	print " found p-reciprocal polynomial!";
+	return P;
+    end if;
+    print "Not recognised!";
+    return 1*x^0;    
+end function;

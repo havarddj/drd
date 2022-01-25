@@ -1,4 +1,5 @@
 load "./src/algdep.m";
+load "./src/lindep.m";
 load "./src/discs.m";
 load "./src/tate_unif.m";
 load "./src/overconvergent.m";
@@ -142,6 +143,7 @@ function GS_unit(F,p,m : verbose:=true)
 	print "Running thorough algdep on exp(ct)";
 	print "";
     end if;    
-    return ThoroughAlgdep(ct,2*ClNo : nn:=30);
+    /* return ThoroughAlgdep(ct,2*ClNo : nn:=30); */
+    return ThoroughAlgdep2(Exp(ct),ClNo);
     /* return algdep(Exp(ct),2*ClNo); */
 end function;
