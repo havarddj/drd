@@ -144,6 +144,6 @@ function GS_unit(F,p,m : verbose:=true)
 	print "";
     end if;    
     /* return ThoroughAlgdep(ct,2*ClNo : nn:=30); */
-    return ThoroughAlgdep2(Exp(ct),ClNo);
+    return ThoroughAlgdep2(Exp(ct),2*ClNo : nn := 20);
     /* return algdep(Exp(ct),2*ClNo); */
 end function;

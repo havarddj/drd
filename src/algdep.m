@@ -224,7 +224,7 @@ function ThoroughAlgdep(a,deg : nn := 100)
 end function;
 
 
-function ThoroughAlgdep2(a,deg)
+function ThoroughAlgdep2(a,deg : nn:= 10)
     Kp   := Parent(a);
     p    := Prime(Kp);
     m    := Precision(Parent(a));
@@ -242,7 +242,7 @@ function ThoroughAlgdep2(a,deg)
 	P1 := algdep(a*zeta^k,deg);
 	LT := Coefficient(P1,deg);
 	if LT/p^Valuation(LT,p) eq 1 then
-	    for m := 0 to 10 do
+	    for m := 0 to nn do
 		PQ := Evaluate(PolQ!P1,p^m*x);
 		if IsReciprocal(PQ) and Degree(PQ) le Degree(P) then
 		    P := Evaluate(PQ,p^(-m)*x);
