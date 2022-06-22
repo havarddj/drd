@@ -260,6 +260,8 @@ function OrdinaryProjection(G : prt := false)
 		// Projection matrix
 		t0 := Cputime();
 		Apow := A^(2*m);
+		/* A2 := A*A; */
+		/* Apow := 1;  */
 		/* for i := 1 to m do */
 		/* 	Apow := Apow*A2; */
 		/* end for; */
@@ -270,9 +272,12 @@ function OrdinaryProjection(G : prt := false)
 		constant, comb := basis_coordinates(G,B : prt := prt);
 		comb_ord := comb*Apow;
 		Gord := Parent(G)!0;
+		print "den: ", comb[ell+1];
 		den  := ZZ!(comb[ell+1]);
+		/* den  := (comb[ell+1]); */
 		for i := 1 to ell do
-			Gord := Gord - Rp!(comb_ord[i]/den)*B[i];
+		    Gord := Gord - Rp!(comb_ord[i]/den)*B[i];
+		    /* Gord := Gord - (comb_ord[i]/den)*B[i]; */
 		end for;
 	
 		return Parent(G)!Gord;

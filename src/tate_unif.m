@@ -1,3 +1,20 @@
+function Fudge(E)
+	
+	Sha := Floor(ConjecturalRegulator(E)); 	
+	Tam := 1;
+	for no in TamagawaNumbers(E) do
+		Tam := Tam*no;
+	end for;
+	fudge := Sha*Tam/Order(TorsionSubgroup(E))^2;
+	
+	r,Lr1 := AnalyticRank(E: Precision:=50);
+	OmE   := RealPeriod(E);
+	// print "Fudge factor: ", fudge, Lr1/OmE; // Check that this agrees with analytic calculation.
+	
+	return fudge;
+
+end function;
+
 function qParameter(E,p,m)
 
 	jE   := jInvariant(E);
