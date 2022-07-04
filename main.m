@@ -204,6 +204,7 @@ function GSUnit(F,p,m : verbose:=true, GSAd:=true)
 
     /* return ThoroughAlgdep(Exp(ct),ClNo : pval := Meyer(F)); */
 
+<<<<<<< HEAD
 
     /* To compute the valuation of the constant term, our choice of
     normalisation is precisely so that the constant term is p^R where
@@ -215,16 +216,20 @@ function GSUnit(F,p,m : verbose:=true, GSAd:=true)
 	print Qf, "has Meyer special value equal to ", Meyer2(Qf);
 	ord := ZZ!(Meyer2(Qf)*e);
 	Append(~Lvals,ord);
+>>>>>>> 75c667466d73e41785316bbba97d25440454a307
     end for;
 
     /* print(pord); */
     if GSAd then
+<<<<<<< HEAD
 	expt := (ZZ!(Meyer2(F)*e));
 	print "exponent of p", expt;
 	return GSAlgdep(Exp(ct)*QQ!(p^expt), ClNo, Lvals);
     else
 	/* return algdep(Exp(ct),2*ClNo); */
 	return ThoroughAlgdep(Exp(ct)*QQ!(p^(ZZ!(Meyer2(F)*2))),ClNo : nn:=30);
+=======
+>>>>>>> 75c667466d73e41785316bbba97d25440454a307
     end if;
 end function;
 /* function HeckeEulerFactor(chi,p) */
@@ -358,4 +363,6 @@ function GSUnitData(D, forms, p: e:=1, prec:=75)
     return e;
 end function;
 
-
+<<<<<<< HEAD
+=======
+>>>>>>> 75c667466d73e41785316bbba97d25440454a307

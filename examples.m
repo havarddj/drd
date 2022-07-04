@@ -16,12 +16,14 @@ function example_computation(Q,p,m)
     G := Diagonal_Restriction_Derivative(Q,p,m);
     beta := Exp(Coefficient(G,0));
 
+<<<<<<< HEAD
     pval := -ZZ!(Meyer2(Q)*GenusFieldRootsOf1(D));
     print "pval equals", pval;
 
     /* f := algdep(beta*p^-pval,clno); */
-    f := GSAlgdep(beta,clno,pval);
-    
+    f := GSAlgdep(beta,clno,pval);    
+=======
+>>>>>>> 75c667466d73e41785316bbba97d25440454a307
     /* f := Evaluate(PolQ!f,3*x)/3; */
     print "min poly = ", f;
     print "with discriminant", Discriminant(f);
@@ -45,6 +47,7 @@ function example_computation(Q,p,m)
     RFp := PolynomialRing(Fp);
     zeta := Roots(RFp!CyclotomicPolynomial(p^2-1))[1][1];
     beta := Fp!beta;
+<<<<<<< HEAD
 
     print "beta lives in ", Parent(beta);
     print "psi(eps) lives in ", Parent(psi(eps));
@@ -173,4 +176,7 @@ function batch_compute_p(prime_bd, D : m:=50)
 	end if;
     end for;
     return 0;
+=======
+ 
+>>>>>>> 75c667466d73e41785316bbba97d25440454a307
 end function;
