@@ -379,7 +379,7 @@ function Diagonal_Restriction_data(F,m) // weight 2k
 	Fs    := [[F_p,F_n]];
 	// Hecke operators
 	for n := 2 to m-1 do
-	    Diag_F_n := 0;
+	    /* Diag_F_n := 0;	/\* what *\ / */
 	    if n eq 1 then
 		p := 1;
 		d := 1;
@@ -446,5 +446,46 @@ function Diagonal_Restriction_Derivative(F,p,m : pprec := m)
     Fs, Forms := Diagonal_Restriction_data(F,m);
     /* print Fs[2]; */
     return diagonal_restriction_derivative(F,p,m,Fs,Forms : pprec := pprec);
+	
+end function;
+
+function diagonal_restriction(F,k,m,Fs,Forms : Stabilisation := 1, pprec := m)
+
+	R<q>   := PowerSeriesRing(ZZ,pprec);
+	Diag_F := R!0;
+
+	f := Conductor(Parent(F));
+	p := Stabilisation;
+	assert IsPrime(p) or p eq 1;
+	
+	for n in [1..m-1] do
+	    F_p := Fs[n][1];
+	    F_m := Fs[n][2];
+	    coeff_n := 0;
+	    for i := 1 to #F_p do
+
+		ap := F_p[i][1];
+		if Gcd(ap,p*f) eq 1 then
+		    coeff_n := coeff_n + ap^(k-1);
+		end if;
+		am := F_m[i][1];
+		if Gcd(am,p*f) eq 1 then
+		    coeff_n := coeff_n + (-1)^k*(-am)^(k-1);
+		end if;
+	    end for;
+		
+	    Diag_F := Diag_F + 4*coeff_n*q^n;
+		
+	end for;
+	
+	return Diag_F;
+
+end function;
+
+function Diagonal_Restriction(F,k,m : Stabilisation := 1, pprec := m)
+
+	As, Forms := Diagonal_Restriction_data(F,m);
+	
+	return diagonal_restriction(F,k,m,As,Forms : Stabilisation := Stabilisation, pprec := pprec);
 	
 end function;

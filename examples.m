@@ -16,14 +16,13 @@ function example_computation(Q,p,m)
     G := Diagonal_Restriction_Derivative(Q,p,m);
     beta := Exp(Coefficient(G,0));
 
-<<<<<<< HEAD
+
     pval := -ZZ!(Meyer2(Q)*GenusFieldRootsOf1(D));
     print "pval equals", pval;
 
     /* f := algdep(beta*p^-pval,clno); */
     f := GSAlgdep(beta,clno,pval);    
-=======
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
+
     /* f := Evaluate(PolQ!f,3*x)/3; */
     print "min poly = ", f;
     print "with discriminant", Discriminant(f);
@@ -47,7 +46,7 @@ function example_computation(Q,p,m)
     RFp := PolynomialRing(Fp);
     zeta := Roots(RFp!CyclotomicPolynomial(p^2-1))[1][1];
     beta := Fp!beta;
-<<<<<<< HEAD
+
 
     print "beta lives in ", Parent(beta);
     print "psi(eps) lives in ", Parent(psi(eps));
@@ -113,11 +112,19 @@ end function;
 
 
 
-function batch_compute_D(disc_bd, p : m := 50)
+function batch_compute_D(disc_bd, p : m := 50, disc_start := 0)
     Filename := "data/D" * IntegerToString(disc_bd) * "p" *IntegerToString(p) * "prec" * IntegerToString(m) *".txt";
-    Write(Filename, "D,p, Pol" : Overwrite := true);
-    for D in [5..disc_bd] do
+    if disc_start eq 0 then
+	/* if not specified, start new file */
+	Write(Filename, "D,p, Pol" : Overwrite := true);
+	disc_start := 5;
+    else
+	/* but if we're "resuming computations" then we don't */
+	Write(Filename, "D,p, Pol" : Overwrite := false);
+    end if;
+    for D in [disc_start..disc_bd] do
 	/*if D fund disc and  p inert in Q(sqrt(D)) */
+	found_flag := false;
 	SqF_disc := {f[2] mod 2 : f in Factorisation(D)} eq {1};
 	if IsFundamentalDiscriminant(D) and SqF_disc  and KroneckerSymbol(D,p) eq -1 then
 	    Orbs := Reverse(ReducedOrbits(QuadraticForms(D)));
@@ -127,19 +134,36 @@ function batch_compute_D(disc_bd, p : m := 50)
 			P := GSUnit(Q[1],p,m); /* if this fails, print message and continue */
 		    catch e
 			print "could not find GS unit for discriminant", D;
-			break;
 		    end try;
 		    if IsHCF(P,D) then
+			found_flag := true;
 			String := Sprint(D)* ", "* Sprint(p) *", "*Sprint(P);
 			Write(Filename, String);
 			break;
-		    else
-			print "could not find GS unit for discriminant", D;
-			String := Sprint(D)* ", "* Sprint(p) *", 0";
-			Write(Filename, String);
+
 		    end if;
 		end for;
-
+		if not found_flag then
+		    /* /\* try with more precision *\/ */
+		    /* print "TRYING AGAIN W 3 TIMES PRECISION"; */
+		    /* for Q in Orbs do  */
+		    /* 	try */
+		    /* 	    P := GSUnit(Q[1],p,3*m); /\* if this fails, print message and continue *\/ */
+		    /* 	catch e */
+		    /* 	    print "could not find GS unit for discriminant", D; */
+		    /* 	    break; */
+		    /* 	end try; */
+		    /* 	if IsHCF(P,D) then */
+		    /* 	    found_flag := true; */
+		    /* 	    String := Sprint(D)* ", "* Sprint(p) *", "*Sprint(P); */
+		    /* 	    Write(Filename, String); */
+		    /* 	    break; */
+		    /* 	end if; */
+		    /* end for; */
+		print "could not find GS unit for discriminant", D;
+		String := Sprint(D)* ", "* Sprint(p) *", 0";
+		Write(Filename, String);
+		end if;
 	    end if;
 	end if ;
     end for;
@@ -148,35 +172,71 @@ function batch_compute_D(disc_bd, p : m := 50)
 end function;
     
 function batch_compute_p(prime_bd, D : m:=50)
-
+    /* initiate file etc */
     Filename := "data/p" * IntegerToString(prime_bd) * "D" *IntegerToString(D) * "prec" * IntegerToString(m) *".txt";
     Write(Filename, "D,p, Pol" : Overwrite := true);
+
+    /* certain sanity checks */
     Orbs := Reverse(ReducedOrbits(QuadraticForms(D)));
     assert #Orbs gt 1;
     assert {f[2] mod 2 : f in Factorisation(D)} eq {1}; /* make sure discriminant is squarefree */
     assert IsFundamentalDiscriminant(D);
+
+
+    /* Compute arithmetic data including valuation vector of min polys */
+    h := #ReducedOrbits(QuadraticForms(Discriminant(F)));
+    e := GenusFieldRootsOf1(D);
+    Lvals := [];
+    for Q in ReducedOrbits(QuadraticForms(D)) do
+	Qf := Q[1];
+	print Qf, "has Meyer special value equal to ", Meyer2(Qf);
+	ord := ZZ!(Meyer2(Qf)*e);
+	Append(~Lvals,ord);
+    end for;
+    LGCD := GCD(Lvals);
+    for l in [1..#Lvals] do
+	Lvals[l] := Lvals[l]/LGCD;
+    end for;
+    
+    /* Compute quadratic forms data; indep of p */
+    Fs_list := [**];
+    Forms_list := [**];
+    for l in [1..h] do	     
+	Fs, Forms := Diagonal_Restriction_data(Orbs[l][1],m);
+	Append(~Fs_list,Fs);
+	Append(~Forms_list,Forms);
+    end for;
+
+    /* main loop */
     for p in [3..prime_bd] do
 	if IsPrime(p) and KroneckerSymbol(D,p) eq -1 then
-	    for Q in Orbs do
-		    try
-			P := GSUnit(Q[1],p,m); /* if this fails, print message and continue */
-		    catch e
-			print "could not find GS unit for discriminant", D;
-			break;
-		    end try;
-		    if IsHCF(P,D) then
-			String := Sprint(D)* ", "* Sprint(p) *", "*Sprint(P);
-			Write(Filename, String);
-			break;
-		    else
-			print "could not find GS unit for prime", p;
-		    end if;
+	    found_flag := false;
+	    for i in [1..h] do
+		try
+		    drd := diagonal_restriction_derivative(Orbs[i][1],p,m,Fs_list[i],Forms_list[i] : pprec := pprec);
+		    a := Exp(Coefficient(drd,0));
+		    P := GSAlgdep(a*QQ!(p^(ZZ!(Lvals[i]))), h,Lvals); 
+		catch e
+		    print "could not find GS unit for discriminant", D;
+		    break;
+		end try;
+		
+		if IsHCF(P,D) then
+		    found_flag := true;
+		    String := Sprint(D)* ", "* Sprint(p) *", "*Sprint(P);
+		    Write(Filename, String);
+		    break;
+		else
+		    print "could not find GS unit for prime", p;
+		end if;
 	    end for;
-
+	    if not found_flag then
+		print "could not find GS unit for discriminant", D;
+		String := Sprint(D)* ", "* Sprint(p) *", 0";
+		Write(Filename, String);
+	    end if;
 	end if;
     end for;
     return 0;
-=======
- 
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
+
 end function;

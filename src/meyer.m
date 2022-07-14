@@ -97,8 +97,9 @@ function Meyer2(F)
     
     Psi := Phi - 3*Sign(c*(a+d));
 
-    return Psi/12;
-    /* Using the normalisation of Duke-Imamoglu-Toth */
+    return Psi/6;
+    /* Note: computing value of L(0,1_A-A*), which is twice the
+       zeta_-(0,A) in Duke-Imamoglu-Toth */
 end function;
 
 

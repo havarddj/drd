@@ -8,7 +8,7 @@ function nonp_Height(P,p)
     return Max([Abs(c/p^Valuation(c,p)) : c in Coefficients(P)]);
 end function;
 
-<<<<<<< HEAD
+
 function IsPowerofP(a,p : n :=20)
     for j in [0..n] do
 	if ZZ!(a) eq ZZ!(p^j) then
@@ -17,8 +17,7 @@ function IsPowerofP(a,p : n :=20)
     end for;
     return false;
 end function;			    
-=======
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
+
 		    
 function algdepZpm(a,deg)
 
@@ -170,11 +169,10 @@ function recAlgdepQp2(a,deg)
     p := Prime(Parent(a));
     m := Precision(Parent(a));
     /* N := p^Floor(5*m/7); */
-<<<<<<< HEAD
+
     N := p^m;
-=======
-    N := 10^600;
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
+
+
     /* N := p^m; */
 
     assert deg mod 2 eq 0;
@@ -198,10 +196,9 @@ function recAlgdepQp2(a,deg)
     M[d+3][d+3] := N;
 
     Y,T:=LLL(M);
-<<<<<<< HEAD
-    print "Y is given by", Y[1], Y[2], Y[3];
-=======
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
+
+    /* print "Y is given by", Y[1], Y[2], Y[3]; */
+
     /* P1 := Floor(Y[1][d+2] - Y[1][1])*(1+x^deg); */
     P1 := -Floor(Y[1][d+1])*x^d;
     for j := 0 to d-1 do
@@ -209,12 +206,6 @@ function recAlgdepQp2(a,deg)
 	P1 := P1 - c*(x^j + x^(deg-j));
     end for;
 
-<<<<<<< HEAD
-    /* Fac1 := Factorisation(P1); */
-    /* P1   := Fac1[#Fac1][1]; */
-    
-=======
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
     return P1;
 
     /* print "P1 is",P1; */
@@ -252,8 +243,6 @@ function IsReciprocal(P)
     end for;
     return true;
 end function;
-
-<<<<<<< HEAD
 /* function GSAlgdep(a,deg, pval) */
 /*     /\* Input: */
 /*        - a, approximation to Gross-Stark unit u in Qp^2, whose */
@@ -391,9 +380,7 @@ end function;
 
 
 function ThoroughAlgdep(a,deg : nn:= 10)
-=======
 
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
     Kp   := Parent(a);
     assert #Eltseq(a) eq 2;
     p    := Prime(Kp);
@@ -406,7 +393,6 @@ function ThoroughAlgdep(a,deg : nn:= 10)
    
     PolZ<x> := PolynomialRing(ZZ);
     PolQ<x> := PolynomialRing(QQ);
-<<<<<<< HEAD
     
     P := PolZ!(10^100*x^deg);
 
@@ -430,15 +416,11 @@ function ThoroughAlgdep(a,deg : nn:= 10)
     P := P/GCD(Coefficients(P));
     return P;
 
-=======
-
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
 end function;
 
 function Rlindep(L)
     /* looks for integral linear dependence between elements of vector L*/
 
-<<<<<<< HEAD
     N := 10^6;			/* random big param. */
     /* N := 1; */
     d := #L;
@@ -451,9 +433,7 @@ function Rlindep(L)
     end for;
     /* print M, Parent(M); */
     B,T:=LLL(M); /* returns basis B, linear transformation T */
-=======
 
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
     
     ni_list := [];
     for i in [1..d] do
@@ -464,7 +444,6 @@ function Rlindep(L)
     print "delta: ", &+[ni_list[i]*L[i] : i in [1..d] ]; 
     return ni_list;
     
-<<<<<<< HEAD
 end function;
 
 
@@ -484,13 +463,11 @@ function GenusFieldRootsOf1(D)
 	end if;
 	if p eq 3 then
 	    e := e*3;
-=======
 
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
 	end if;
 
     end for;
-<<<<<<< HEAD
+
     return e;
 end function;
 
@@ -603,8 +580,5 @@ function GSAlgdep(a,deg,Lvals : D :=1)
 	return 0;
     end if;
     return P;
-    
-=======
- 
->>>>>>> 75c667466d73e41785316bbba97d25440454a307
+
 end function;
