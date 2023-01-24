@@ -92,7 +92,7 @@ function GrossStarkSearch(c,K : opt := 1)
 		print "Valuation: ", Valuation(sum);
 		ugl := K!1;
 		for i := 1 to #Logs do
-			ugl := ugl*(K!mU(U[i]))^(ZZ!(vec[i]/12));
+			ugl := ugl*(K!mU(U[i]))^(ZZ!(vec[i]));
 		end for;
 		f := MinimalPolynomial(ugl);
 		lcm := 1;
@@ -106,6 +106,6 @@ function GrossStarkSearch(c,K : opt := 1)
 //  		end for;
 	end for;
 	
-	return "Done";
+	return f;
 
 end function;

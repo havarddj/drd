@@ -1,5 +1,5 @@
-function Fudge(E)
-	
+intrinsic Fudge(E::CrvEll) -> Any
+{Compute rational part of L(E,1) }	
 	Sha := Floor(ConjecturalRegulator(E)); 	
 	Tam := 1;
 	for no in TamagawaNumbers(E) do
@@ -13,27 +13,26 @@ function Fudge(E)
 	
 	return fudge;
 
-end function;
+end intrinsic;
 
-function qParameter(E,p,m)
-
+intrinsic qParameter(E::CrvEll, p::RngIntElt, m::RngIntElt) -> Any
+{Compute q-parameter of E}
 	jE   := jInvariant(E);
 	vjE  := Valuation(jE,p);
 	assert vjE lt 0; // E must be a Tate curve!
 	
-	Qp   := pAdicField(p,m);
-	R<q> := PowerSeriesRing(Qp,m);
+	Fp   := pAdicField(p,m);
+	R<q> := PowerSeriesRing(Fp,m);
 	Jq   := jInvariant(q);
 	g    := Reverse(1/Jq);
 	
 	return Evaluate(g,1/jE);
 
-end function;
+end intrinsic;
 
 
-// This function computes the sum sk(q), see Silverman p.423
-function TateSk(q,k,m)
-
+intrinsic TateSk(q,k,m) -> Any
+{This function computes the sum sk(q), see Silverman p.423}
 	Sk := q/(1-q);
 	qi := q;
 	for i := 2 to m-1 do
@@ -43,18 +42,18 @@ function TateSk(q,k,m)
 	
 	return Sk;
 	
-end function;
+end intrinsic;
 
-// This function computes the coefficient a4(q), see Silverman p.423
-function TateA4(q,m)
-
+ 
+intrinsic TateA4(q,m) -> Any
+{This function computes the coefficient a4(q), see Silverman p.423}
 	return -5*TateSk(q,3,m);
 	
-end function;
+end intrinsic;
 
-// This function computes the coefficient a4(q), see Silverman p.423
-function TateA6(q,m)
 
+intrinsic TateA6(q, m::RngIntElt) -> Any
+{This function computes the coefficient a4(q), see Silverman p.423}
 	ZZ := Integers();
 	A6 := 0;
 	qi := 1;
@@ -65,11 +64,11 @@ function TateA6(q,m)
 	
 	return A6;
 	
-end function;
+end intrinsic;
+ 
 
-// This function returns the X-coordinate of the point u in Cp*/q^Z, up to precision m.
-function TateX(u,q)
-
+intrinsic TateX(u,q) -> Any
+{This function returns the X-coordinate of the point u in Cp*/q^Z, up to precision m.}
 	m := Precision(Parent(u));
 	X := u/(1-u)^2;
 	qi := 1;
@@ -80,11 +79,11 @@ function TateX(u,q)
 	
 	return X;
 
-end function;
+end intrinsic;
 
-// This function returns the Y-coordinate of the point u in Cp*/q^Z, up to precision m.
-function TateY(u,q)
 
+intrinsic TateY(u,q) -> Any
+{This function returns the Y-coordinate of the point u in Cp*/q^Z, up to precision m.}
 	m := Precision(Parent(u));
 	Y := u^2/(1-u)^3;
 	qi := 1;
@@ -92,14 +91,14 @@ function TateY(u,q)
 		qi := qi*q;
 		Y := Y + (qi*u)^2/(1-qi*u)^3 - qi*u^2/(u-qi)^3 + qi/(1-qi)^2;
 	end for;
-	
+	print "Type of Y", Y;
 	return Y;
 
-end function;
+end intrinsic;
 
-function EllCurvesData(p)
-    /* Return representatives for all isogeny classes of
-       elliptic curves of conductor p   */
+intrinsic EllCurvesData(p) -> Any
+ {Return representatives for all isogeny classes of
+       elliptic curves of conductor p}
     D := CremonaDatabase();
     AllEs := EllipticCurves(D,p);
     IsogNum := NumberOfIsogenyClasses(D,p);
@@ -111,4 +110,4 @@ function EllCurvesData(p)
     end for;
     return Es;
    	      
-end function;
+end intrinsic;

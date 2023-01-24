@@ -1,6 +1,9 @@
 /* From "overconvergentlatest.m" */
 /* (from Jan's email a 21/01/22 */
+/* Updated 14/10/22 to incorporate higher level katz */
+/* Updated 05/12/22 to make use of intrinsics */
 
+/* Most of the below was originally written by Jan Vonk: */
 // -------------------------------------------------------------
 //               2) Overconvergent modular forms
 // -------------------------------------------------------------
@@ -9,9 +12,12 @@
 // The algorithms are due to Lauder, though we have restricted here to level 1 where things are much simpler. 
 
 
-// Computes the q-expansion for the Eisenstein series of weightk, to precision q^NN over S.
-function ESeries(k,NN,S)
+import "./OClvlN.m" : Computeldash, HigherLevelKatzExp;
 
+ZZ := Integers();
+	      
+intrinsic ESeries(k,NN,S) -> Any
+{Computes the q-expansion for the Eisenstein series of weightk, to precision q^NN over S.}
 	R<q> := PowerSeriesRing(S,NN);
 	a1 := -S!(2*k/Bernoulli(k));
 	Ek := 1 + a1*q;
@@ -26,30 +32,30 @@ function ESeries(k,NN,S)
 
 	return Ek;
 
-end function;
+end intrinsic;
 
 
-// Dimension of space of modular forms of weight k and level 1.
-function DimensionClassicalSpace(k)
-
+/* */
+intrinsic DimensionClassicalSpace(k) -> Any
+{ Dimension of space of modular forms of weight k and level 1}
 	if ((k mod 2) eq 1) or (k lt 0) then
 		return 0;
 	end if;
-	kmod12 := k mod 12;
-	if (kmod12 eq 2) then
+
+	if (k mod 12) eq 2 then
 		return Floor(k/12);
 	else
 		return Floor(k/12) + 1;
 	end if;
 
-end function;
+end intrinsic;
 
 
-// Returns the power of the Hasse invariant that has been lifted.
+//
 // This is always 1, except when p = 2,3.
 
-function ap(p)
-
+intrinsic ap(p) -> Any
+{ Returns the power of the Hasse invariant that has been lifted.}
 	a := 1;
 	if p eq 2 then
 		a := 4;
@@ -59,17 +65,17 @@ function ap(p)
 	end if;
 	return a;
 
-end function;
+end intrinsic;
 
 
-// Returns the weight of the Eisenstein series to be used for lifting the Hasse invariant. 
+// 
 // This is always p-1, unless p = 2,3.
 
-function EisWeight(p)
-
+intrinsic EisWeight(p) -> Any
+{Returns the weight of the Eisenstein series to be used for lifting the Hasse invariant. }
 	return ap(p)*(p-1);
 
-end function;
+end intrinsic;
 
 
 // Returns basis for a subspace of weight k complementary to image of multiplication by the Eisenstein series. 
@@ -95,8 +101,9 @@ function ComputeWi(k,p,delta,deltaj,E4,E6)
 end function;
 
 
-// Returns list e of Katz expansions, 
-function OverconvergentBasis(k,p,mp,prec,S)
+
+intrinsic OverconvergentBasis(k,p,mp,prec,S) -> Any
+{Returns list e of Katz expansions}
 	
 	Ep1 := ESeries(EisWeight(p),mp,S);
 	E4  := ESeries(4,mp,S);
@@ -119,7 +126,7 @@ function OverconvergentBasis(k,p,mp,prec,S)
 		
 	return B;
 
-end function;
+end intrinsic;
 
 
 // -------------------------------------------------------------
@@ -129,7 +136,7 @@ end function;
 // This section computes the ordinary projection of an overconvergent form G, by iterating Up. 
 
 // Given a form G in a space with basis B, recognise G as a linear combination of the elements in B.
-/* function basis_coordinates(G,B : prt := false) */
+/* intrinsic basis_coordinates(G,B : prt := false) */
 
 /* 	m := Precision(Parent(G)); */
 /* 	C := Matrix([[Coefficient(B[i],j) : j in [1..m-1]] : i in [1..#B]] cat [[Coefficient(G,j) : j in [1..m-1]]]); */
@@ -154,11 +161,12 @@ end function;
 	
 /* 	return constant, comb; */
 
-/* end function; */
+/* end intrinsic; */
 
 
-function basis_coordinates(G,B : prt := true)
-
+intrinsic basis_coordinates(G,B : prt := true, int:=true) -> Any
+{Finds G in terms of q-expansion basis B
+This ignores the constant term, so if G misses a constant term it will be found and returned by the function.}
     Rp := Parent(Coefficient(G,1));
     m := Precision(Parent(G));
     C := Matrix([[Coefficient(B[i],j) : j in [1..m-1]] : i in [1..#B]] cat [[Coefficient(G,j) : j in [1..m-1]]]);
@@ -187,137 +195,212 @@ function basis_coordinates(G,B : prt := true)
 	    print "";
 	    print "Coeff of G:", comb[#B+1];
 	end if;
-	constant := -(&+ [Coefficient(B[i],0)*comb[i] : i in [1..#B]])/Rp!comb[#B+1];
+	if int then
+	    try 
+		constant := -(&+ [Coefficient(B[i],0)*comb[i] : i in [1..#B]])/Rp!comb[#B+1];
+	    catch e1
+		print "did not succeed writing in terms of basis, try with more precision";
+		constant := 0;
+	    end try;
+	else
+	    constant := -(&+ [Coefficient(B[i],0)*comb[i] : i in [1..#B]])/comb[#B+1];
+	end if;
 	print "Constant term is: ", constant;
     end if;
 	
     return constant, comb;
 
-end function;
+end intrinsic;
 
 
-// Test whether a given form is overconvergent of weight 2 and tame level 1.
-function IsOverconvergent(G : prt := false)
+// Test whether a given form is overconvergent of weight 2 and tame level f.
+intrinsic IsOverconvergent(G : prt := false, f := 1) -> Any
+{Test whether a given form is overconvergent of weight 2 and tame level f, and if so, return constant term}
+    prec := Precision(Parent(Coefficient(G,1)));
+    p := Prime(Parent(Coefficient(G,1)));
+    m := Precision(Parent(G));
 
-	prec := Precision(Parent(Coefficient(G,1)));
-	p := Prime(Parent(Coefficient(G,1)));
-	m := Precision(Parent(G));
-	B := OverconvergentBasis(2,p,m,prec,Parent(Coefficient(G,1)));
-	
-	constant, comb := basis_coordinates(G,B : prt := prt);
-	
-	return constant;
-	
-end function;
-
-
-
-// Computes the ordinary projection of G, in the space of overconvergent forms of weight 2 and tame level 1.
-function OrdinaryProjection(G : prt := false) 
-
-	Rp   := Parent(Coefficient(G,0));
-	prec := Precision(Rp);
-	p    := Prime(Rp);
-	m    := Precision(Parent(G));
-	bnd  := DimensionClassicalSpace(2+EisWeight(p)*Floor(prec*(p+1)/(ap(p)*p)))-1;
-	
-	if bnd ge m then
-		print "You need at least", bnd, "Fourier coefficients to compute the ordinary projection.";
-		return "","";
-	else
-	
-		t0 := Cputime();
-		B  := OverconvergentBasis(2,p,p*m,prec,Parent(Coefficient(G,1)));
-		print "Computed overconvergent basis: ", Cputime() - t0;		
-		
-		// Compute coefficients of image of basis under Up.
-		ell := #B;
-		S := Parent(Coefficient(B[1],0));
-		T := ZeroMatrix(S,ell,ell);
-		for i := 1 to ell do
-			for j := 1 to ell do
-				T[i,j] := Coefficient(B[i],p*(j-1));
-			end for;
-		end for;
-		
-		// Solve for matrix for Up	
-		t0 := Cputime();	
-		A := ZeroMatrix(S,ell+1,ell+1);
-		for i := 1 to ell do
-			Ti := T[i];		
-			for j := 1 to ell do
-				Bj := Parent(Ti)![Coefficient(B[j],l-1): l in [1 .. ell]];
-				lj := Integers()!Bj[j];
-				if lj eq 0 then
-					print j, Bj;
-				end if;
-				A[i,j] := S!((Integers()!Ti[j])/lj);
-				Ti := Ti - A[i,j]*Bj;
-			end for;
-		end for;
-		print "Computed matrix for Up:        ", Cputime() - t0;
-
-		// Projection matrix
-		t0 := Cputime();
-		Apow := A^(2*m);
-		/* A2 := A*A; */
-		/* Apow := 1;  */
-		/* for i := 1 to m do */
-		/* 	Apow := Apow*A2; */
-		/* end for; */
-
-		print "Computed projection matrix:    ", Cputime() - t0;
-
-		// Projection of G.		
-		constant, comb := basis_coordinates(G,B : prt := prt);
-		comb_ord := comb*Apow;
-		Gord := Parent(G)!0;
-		print "den: ", comb[ell+1];
-		den  := ZZ!(comb[ell+1]);
-		/* den  := (comb[ell+1]); */
-		for i := 1 to ell do
-		    Gord := Gord - Rp!(comb_ord[i]/den)*B[i];
-		    /* Gord := Gord - (comb_ord[i]/den)*B[i]; */
-		end for;
-	
-		return Parent(G)!Gord;
-		
+    if f eq 1 then
+	B := OverconvergentBasis(2,p,m*p,prec,Parent(Coefficient(G,1)));
+    else
+	/* Does not work! */
+	if prt then
+	    print "computing basis of higher level Katz expansions";
+	/* taken from the intrinsic HigherLevelUpGj in OClvlN.m */
 	end if;
+	elldash := Computeldash(p,f,2,m);
+	elldashp := elldash*p;
+	n := Floor(((p+1)/EisWeight(p))*(m+1+(ap(p)-1)/(p+1)));	 
+	mdash := m + Ceiling(n*ap(p)/(p+1));
+	weightbound := 6;	/* should be ok? */
+	// Steps 2 and 3
 
-end function;
+	e, Ep1 := HigherLevelKatzExp(f,p,2,m,mdash,n,elldash,elldashp,weightbound);
+	if prt then print "computed basis of Katz expansions"; end if;
+	/* e is a matrix of coefficients, but we actually want a basis proper */
+	R := Parent(G);
+	q := R.1;
+	B := [];
+
+	for r in Rows(e) do
+	    Append(~B,&+[ZZ!(r[i])*q^(i-1) : i in [1..Ncols(e)]]);
+	end for;
+	
+    end if;
+    if prt then
+	print "Searching for form in space of overconvergent modular forms";
+    end if;
+    constant, comb := basis_coordinates(G,B : prt := prt);
+    print "valuation of difference of terms";
+    diffr := G - &+[comb[i]*B[i] : i in [1..#B]]/comb[#B+1];
+    for i in [1..#B] do
+	Valuation(Coefficient(diffr,i));
+    end for;
+
+    return constant;
+	
+end intrinsic;
+
+
+intrinsic OrdinaryProjection(G : prt := false, f := 1) -> Any
+{Computes the ordinary projection of G, in the space of overconvergent forms of weight 2 and tame level f}
+    Rp   := Parent(Coefficient(G,0));
+    prec := Precision(Rp);
+    p    := Prime(Rp);
+    m    := Precision(Parent(G))-1;
+    bnd  := DimensionClassicalSpace(2+EisWeight(p)*Floor(prec*(p+1)/(ap(p)*p)))-1;
+    if bnd gt m then
+	print "You need at least", bnd, "Fourier coefficients to compute the ordinary projection.";
+	print "number of coeffs", m;
+	return "";
+    end if;
+
+    if f eq 1 then
+	t0 := Cputime();
+	B  := OverconvergentBasis(2,p,p*m,prec,Parent(Coefficient(G,1)));
+	print "Computed overconvergent basis: ", Cputime() - t0;
+
+    else
+	elldash:=Computeldash(p,f,2,m);
+	elldashp:=elldash*p;
+	n:=Floor(((p+1)/EisWeight(p))*(m+1+(ap(p)-1)/(p+1)));	 
+	mdash:=m + Ceiling(n*ap(p)/(p+1));
+	weightbound := 6;	/* should be ok? */
+	// Steps 2 and 3
+
+	e,Ep1 :=HigherLevelKatzExp(f,p,2,m,mdash,n,elldash,elldashp,weightbound);
+	/* e is a matrix of coefficients, but we actually want a basis proper */
+	R<q> := PowerSeriesRing(Rp,Ncols(e));
+	B := [];
+	/* print "e has parent", Parent(e); */
+	for r in Rows(e) do
+	    Append(~B,&+[ZZ!(r[i])*q^(i-1) : i in [1..Ncols(e)]]);
+	end for;
+	/* print "Now B has parent", Parent(B); */
+    end if;
+		// Compute coefficients of image of basis under Up.
+    ell := #B;
+    S := Parent(Coefficient(B[1],0));
+    T := ZeroMatrix(S,ell,ell);
+    for i := 1 to ell do
+	for j := 1 to ell do
+	    T[i,j] := Coefficient(B[i],p*(j-1));
+	end for;
+    end for;
+    
+    // Solve for matrix for Up	
+    t0 := Cputime();	
+    A := ZeroMatrix(S,ell+1,ell+1);
+    for i := 1 to ell do
+	Ti := T[i];		
+	for j := 1 to ell do
+	    Bj := Parent(Ti)![Coefficient(B[j],l-1): l in [1 .. ell]];
+	    lj := Integers()!Bj[j];
+	    if lj eq 0 then
+		print j, Bj;
+	    end if;
+	    A[i,j] := S!((Integers()!Ti[j])/lj);
+	    Ti := Ti - A[i,j]*Bj;
+	end for;
+    end for;
+    print "Computed matrix for Up:        ", Cputime() - t0;
+
+    // Projection matrix
+    t0 := Cputime();
+    Apow := A^(2*m);
+    /* A2 := A*A; */
+    /* Bpow := 1; */
+    /* for i := 1 to m do */
+    /* 	Bpow := Bpow*A2; */
+    /* end for; */
+
+    /* assert Apow eq Bpow; */
+    print "Computed projection matrix:    ", Cputime() - t0;
+
+    // Projection of G.		
+    constant, comb := basis_coordinates(G,B : prt := prt);
+    comb_ord := comb*Apow;
+    Gord := Parent(G)!0;
+    print "den: ", comb[ell+1];
+    den  := ZZ!(comb[ell+1]);
+    /* den  := (comb[ell+1]); */
+    for i := 1 to ell do
+	Gord := Gord - Rp!(comb_ord[i]/den)*B[i];
+	/* Gord := Gord - (comb_ord[i]/den)*B[i]; */
+    end for;
+    
+    return Parent(G)!Gord;	
+end intrinsic;
 
 
 // -------------------------------------------------------------
 //                 4) Spectral decompositions
 // -------------------------------------------------------------
 
-// Check that a given q-expansion is (modulo the constant term) a member of the space  M_2(p).
-function IsClassical(G : prt := true)
 
+intrinsic IsClassical(G : prt := true, f := 1) -> Any
+{Check that a given q-expansion is (modulo the constant term) a member of the space  M_2(pf).}
 	Kp := Parent(Coefficient(G,0));
 	Rp := IntegerRing(Kp);
 	p  := Prime(Rp);
 	m  := Precision(Parent(G));
-	M  := ModularForms(Gamma0(p),2);
-	B  := Basis(EisensteinSubspace(M),m) cat Basis(CuspForms(Gamma0(p),2),m);
+	M  := ModularForms(Gamma0(p*f),2);
+	B  := Basis(EisensteinSubspace(M),m) cat Basis(CuspForms(Gamma0(p*f),2),m);
 		
 	constant, comb := basis_coordinates(G,B : prt := prt);
-	
-	if prt eq true then
-		print "Basis: ", B;
+
+
+	/* now normalise by the constant term of the Eisenstein
+	series, at least when the level is p;    */
+	/* if G = -\sum_i B[i]comb[i]/comb[#B+1], then replacing B[i]
+	with B2[i] = B[i]/Coeff(B[i],1) gives G = -\sum_i
+	B2[i]*Coeff(B[i])comb[i]/comb[#B+1]/  */
+	/* so the new vec should be multiplied by Coeff[Bi] termwise*/
+
+	vec := [];
+	Bnorm := [];
+	j := Dimension(EisensteinSubspace(M));
+	for i in [1..j] do
+	    Append(~vec, Rp!(-comb[i]*Coefficient(B[i],1)/comb[#B+1]));
+	    Append(~Bnorm, B[i]/Coefficient(B[i],1));
+	end for;
+	for i in [j+1..#B] do
+	    Append(~vec, Rp!(-comb[i]/comb[#B+1]));
+	    Append(~Bnorm, B[i]);
+	end for;
+	assert &+vec eq Coefficient(G,1);
+	if prt then
+	    print "Should be constant: ", &+[Rp!vec[i]*Parent(G)!Bnorm[i] : i in [1..#vec]] - G;
+	    print "normalised basis for M_2(Gamma0(pf)) given by", Bnorm;
 	end if;
-	vec := [Rp!(-Coefficient(B[1],1)*comb[1]/comb[#B+1])] cat [Rp!(-comb[i]/comb[#B+1]) : i in [2..#B]];
-// 	assert &+vec eq Coefficient(G,1);
-// 	print "Should be constant: ", &+[vec[i]*B[i]/Coefficient(B[i],1) : i in [1..#vec]] - G;
-	
-	return vec, B;
+	return vec, Bnorm;
 
-end function;
+end intrinsic;
 
 
-// Check that a given q-expansion is (modulo the constant term) a member of the space  M_2(p).
-function IsClassicalForm(G,k,N)
 
+intrinsic IsClassicalForm(G,k,N) -> Any
+{Check that a given q-expansion is (modulo the constant term) a member of the space  M_k(N)}
 	m  := Precision(Parent(G));
 	M := ModularForms(Gamma0(N),k);
 	B := Basis(EisensteinSubspace(M),m) cat Basis(CuspForms(Gamma0(N),k),m);
@@ -326,4 +409,4 @@ function IsClassicalForm(G,k,N)
 	
 	return [-Coefficient(B[1],1)*comb[1]/comb[#B+1]] cat [-comb[i]/comb[#B+1] : i in [2..#B]];
 
-end function;
+end intrinsic;

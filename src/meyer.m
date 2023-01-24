@@ -1,6 +1,7 @@
-function PellSolution(D)
-    /* returns (|t|,u) where epsilon := (t+u sqrt(D))/2
-    is a fundamental unit of positive norm in Q(sqrt(D)) */
+intrinsic PellSolution(D::RngIntElt) -> Any
+{returns (|t|,u) where epsilon := (t+u sqrt(D))/2
+    is a fundamental unit of positive norm in Q(sqrt(D))}
+
     QQ := QuadraticForms(D);
     O := QuadraticOrder(QQ);
     eps := FundamentalUnit(O);
@@ -12,16 +13,17 @@ function PellSolution(D)
     bool, U := IsSquare((t^2-4)/D);
     u := Integers()!U;
     
-    U1 := Integers()!(((t^2-4)/D)^(1/2));
-    assert U1 eq u;
+    /* U1 := Integers()!(Sqrt(Integers!((t^2-4)/D))); /\* NB precision error here *\/ */
+    /* assert U1 eq u; */
     assert t^2 - D*u^2 eq 4;
     
     return t,u;
 
-end function;
+end intrinsic;
 
 
-function Automorph(F)
+intrinsic Automorph(F::QuadBinElt) -> AlgMatElt
+{Return generator of stabiliser of positive fundamental unit in real quadratic field attached to F}
     ZZ := Integers();
     D := Discriminant(F);
     t,u := PellSolution(D);
@@ -34,7 +36,7 @@ function Automorph(F)
 
     return M;
 	
-end function;
+end intrinsic;
 
 function B1(a)
     if a eq Floor(a) then
@@ -43,64 +45,68 @@ function B1(a)
     return a - Floor(a) - 1/2; 
 end function;
 
-function DedekindSum(h,k)
-    /* With notation from Rademacher-Grosswald, assumes k =|c| positive */
-    assert k ge 1 and GCD(h,k) eq 1;
-
-    return &+[B1(h*mu/k)*B1(mu/k) : mu in [1..k]];
-
-end function;
+intrinsic DedekindSumFast(a::RngIntElt,c::RngIntElt) -> FldRatElt
+{Compute Dedekind sum s(a,c) using algorithm from Knuth's book}
+    assert c ne 0 and GCD(a,c) eq 1;
+    if c lt 0 then
+	return DedekindSumFast(a,-c);
+    end if;
+    if a lt 0 or a gt c then
+	return DedekindSumFast(a mod c, c);
+    end if;
+    if c eq 1 then
+	return 0;		/* then k/c is an integer */
+    end if;
+    /* now we're in the situation of Apostol Mod forms ex. 3.10 */
+    /* run euclidean algo: */
+    x := a;
+    y := c;
+    R := [];
+    while y ne 0 do
+	t := y;			/* r_k-1 */
+	y := x mod y;		/* r_k+1 */
+	x := t;			/* r_k */
+	Append(~R, t);
+    end while;
+    return &+[(-1)^(j+1) *(R[j+1]^2 + R[j]^2+1)/(R[j+1]*R[j]) : j in [1..#R-1] ]/12 -((-1)^#R + 1)/8;
+end intrinsic;
 
 
 function DedekindSum2(a,c)
     /* Defn from Duke-Imamoglu-Toth */
+
     assert c ne 0 and GCD(a,c) eq 1;
-    return &+[B1(a*k/c)*B1(k/c) : k in [1..Abs(c)]];
+    sum := 0;
+    for k in [1..Abs(c)] do
+	sum +:= B1(a*k/c)*B1(k/c);
+    end for;
+    return sum;
 end function;
 
-function Meyer(F)
-    /* Non-functioning version */
-    print("oops this doesn't give the right answer");
-    M := Automorph(F);
-    if M[2][1] le 0 then
-	M := -M;
-    end if;
-    		   
-    a := M[1][1];
-    b := M[1][2];
-    c := M[2][1];
-    d := M[2][2];
-    assert c ge 0;
 
-    assert GCD(c,d) eq 1;
-    nA := (a + d)/c - 3 - 12*DedekindSum(d,c);
-    return nA/3;
-    /* This is eq (17) of Zagier's Asterisque paper, and seems about right*/
-    /* 14/02: we have to divide by 2 it seems */
-end function;
-
-function Meyer2(F)
+intrinsic Meyer2(F::QuadBinElt) -> FldRatElt
+{Compute value of L(0,1_(A-A*)) using Meyer's theorem}
     /* Functioning version, based on Rademacher-Grosswald and DIT18 */
     M := Automorph(F);
-    		   
     a := M[1][1];
     b := M[1][2];
     c := M[2][1];
     d := M[2][2];
-
+    /* print "c,d =", c,d; */
     if c eq 0 then
 	Phi := b/d;
     else
 	/* Phi := (a+d)/c - 12*Sign(c)*DedekindSum(d,Abs(c)); */
-	Phi := (a+d)/c - 12*Sign(c)*DedekindSum2(a,c);
+	/* computing dedekind sum */
+	Phi := (a+d)/c - 12*Sign(c)*DedekindSumFast(a,c);
     end if;
     
     Psi := Phi - 3*Sign(c*(a+d));
 
-    return Psi/6;
+    return Psi/12;		/* should be Psi/6, just checkin */
     /* Note: computing value of L(0,1_A-A*), which is twice the
        zeta_-(0,A) in Duke-Imamoglu-Toth */
-end function;
+end intrinsic;
 
 
 function testMeyer2(F)
@@ -133,23 +139,4 @@ function LValVec(D : forms := [])
 	end for;
     end if;
     return vec;
-    
 end function;
-
-/* function Meyer(Q) */
-/*     /\* D := Discriminant(Q); *\/ */
-/*     /\* K<sqrtD> := QuadraticField(D); *\/ */
-/*     a := Q[1]; */
-/*     b := Q[2]; */
-/*     c := Q[3]; */
-/*     /\* Q2 := Parent(Q)!<c,-b,a>; *\/ */
-/*     /\* if (-b + Sqrt(D))/a lt 0 then *\/ */
-/*     /\* 	w := (-b - sqrtD)/(2*a); *\/ */
-/*     /\* else *\/ */
-/*     /\* 	w := (-b + sqrtD)/(2*a); *\/ */
-/*     /\* end if; *\/ */
-/*     /\* return ContinuedFraction(w : Bound :=500); *\/ */
-/*     print Q, Q2, IsEquivalent(Q,Q2 : Narrow := true); */
-/*     print #NearlyReducedForms(Q), #NearlyReducedForms(Q2); */
-/*     return #NearlyReducedForms(Q) - #NearlyReducedForms(Q2); */
-/* end function; */
